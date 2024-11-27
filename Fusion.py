@@ -4,7 +4,8 @@ import matplotlib.pyplot as plt
 from Calibration import *
 from Kalman_Filter import *
 from Task2_variance import *
-
+from concurrent.futures import ThreadPoolExecutor
+import time
 
 class Fusion:
     def __init__(self, accel_data, wrench_data, orientation_data, sampling_rates):
@@ -162,14 +163,14 @@ def plotData(index, t, raw_wrench, filtered_wrench, estimated_wrench):
 if __name__ == "__main__":
     plt.figure(figsize=(12,6))
 
-    t, raw_wrench, filtered_wrench, estimated_wrench = runFusion(0)
-    plotData(1, t, raw_wrench, filtered_wrench, estimated_wrench)
+    # ThreadPoolExecutor for fun to compute faster. Runs concurrently.
+    params = [(0,), (1,), (2,)]
+    with ThreadPoolExecutor(max_workers=3) as executor:
+        futures = [executor.submit(task, *args) for task, args in zip([runFusion, runFusion, runFusion], params)]
+        results = [future.result() for future in futures]
 
-    t, raw_wrench, filtered_wrench, estimated_wrench = runFusion(1)
-    plotData(3, t, raw_wrench, filtered_wrench, estimated_wrench)
-
-    t, raw_wrench, filtered_wrench, estimated_wrench = runFusion(2)
-    plotData(5, t, raw_wrench, filtered_wrench, estimated_wrench)
+    for i, result in enumerate(results):
+        plotData((i*2+1), results[i][0], results[i][1], results[i][2], results[i][3])
 
     plt.tight_layout()
     plt.show()
