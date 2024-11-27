@@ -38,20 +38,24 @@ class Fusion:
 
     def run(self):
         dataset = self.sortData()
+        
         t0 = dataset[0][0]
-        timestamps = []
-        raw_counter = 0
 
+        raw_counter = 0
+        timestamps = []
         raw_wrench = []
         filtered_wrench = []
         estimated_wrench = []
 
+        FREQ_SCALING = self.f_r / (self.f_f + self.f_a)
+        MICROSEC_TO_SEC = 1e-6
+        SEC_TO_MICROSEC = 1e6
+        
         z_c = np.zeros((6, 9))
         u = np.zeros((3,1))
         z = np.zeros((9, 1))
 
         g_fts_lastK = np.zeros((3, 1))
-        freq_scaling = self.f_r / (self.f_f + self.f_a)
 
         last_tka = t0
         last_tkf = t0
@@ -59,8 +63,8 @@ class Fusion:
         for t, id, data in dataset:
             match id:
                 case 0: # Accelerometer
-                    dt = (t - last_tka) * 1.0e-6
-                    last_tka += dt * 1.0e6
+                    dt = (t - last_tka) * MICROSEC_TO_SEC
+                    last_tka += dt * SEC_TO_MICROSEC
                     z[:3, 0] = data * g
                     self.kf.setQ(dt)
                     self.kf.update_za(z)
@@ -68,8 +72,8 @@ class Fusion:
                     self.kf.correct()
                 
                 case 1: # FTS
-                    dt = (t - last_tkf) * 1.0e-6
-                    last_tkf += dt * 1.0e6
+                    dt = (t - last_tkf) * MICROSEC_TO_SEC
+                    last_tkf += dt * SEC_TO_MICROSEC
                     z[3:, 0] = data
                     self.kf.setQ(dt)
                     self.kf.update_zf(z)
@@ -80,8 +84,9 @@ class Fusion:
                     R_ws = np.array(data).reshape(3,3)
                     g_w = np.array([0, 0, g]).reshape(3,1)                    
                     g_fts_k = R_ws @ g_w # Gravity in fts frame
-                    u = (g_fts_k - g_fts_lastK)*freq_scaling
+                    u = (g_fts_k - g_fts_lastK)*FREQ_SCALING
                     g_fts_lastK = g_fts_k
+                    continue # Don't add plot data
             
             z_c = np.block([
                 [np.eye(3)*-MASS, np.eye(3), np.zeros((3,3))],
@@ -89,11 +94,11 @@ class Fusion:
             ]) @ self.kf.x
 
             # Append plot data
-            timestamps.append((t-t0)*1.0e-6)
+            timestamps.append((t-t0)*MICROSEC_TO_SEC)
             raw_wrench.append(self.wrench_data[raw_counter, 1:])
             filtered_wrench.append(self.kf.x[3:,:])
             estimated_wrench.append(z_c)
-            raw_counter += id == 1
+            raw_counter += id == 1 # This is to match the amount estimated wrenches with raw data when plotting
 
         return timestamps, np.array(raw_wrench), np.array(filtered_wrench), np.array(estimated_wrench)
 
@@ -108,10 +113,9 @@ def runFusion(which):
         "2-vibrations",
         "3-vibrations-contact"
     ]
-    index = which
-    accel_data = pd.read_csv(f"Data/{files[index]}_accel.csv")
-    wrench_data = pd.read_csv(f"Data/{files[index]}_wrench.csv")
-    orientation_data = pd.read_csv(f"Data/{files[index]}_orientations.csv")
+    accel_data = pd.read_csv(f"Data/{files[which]}_accel.csv")
+    wrench_data = pd.read_csv(f"Data/{files[which]}_wrench.csv")
+    orientation_data = pd.read_csv(f"Data/{files[which]}_orientations.csv")
     
     sampling_rates = {
         "accel": computeSamplingRate(accel_data['t']),
@@ -119,7 +123,6 @@ def runFusion(which):
         "orientation": computeSamplingRate(orientation_data['t']),
     }
     
-    # Unbiasing and shifting time due to microcontroller delay
     accel_data['t'] -= 8416 # Phase shift 8416us
     accel_data[['ax', 'ay', 'az']] = (R_fa @ accel_data[['ax', 'ay', 'az']].to_numpy().T).T # Rotate to fts frame
     accel_data[['ax','ay','az']] -= IMU_BIASES # Unbias
