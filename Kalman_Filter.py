@@ -9,7 +9,7 @@ class KalmanFilter:
         self.H = None
         self.Q = None
         self.R = None
-        self.P = np.eye(9)
+        self.P = np.eye(9) * 100
         self.x = np.zeros((9,1))
         self.P_prior = np.zeros((9,9))
         self.x_prior = np.zeros((9,1))

@@ -151,7 +151,7 @@ def plotData(index, t, raw_wrench, filtered_wrench, estimated_wrench):
 
     # Plot Torque in Y-direction
     plt.subplot(3, 2, index + 1)
-    plt.plot(t, raw_wrench[:, 4], label=r"$T_5$",        color="blue",    linewidth=2)
+    plt.plot(t, raw_wrench[:, 4], label=r"$T_2$",        color="blue",    linewidth=2)
     plt.plot(t, filtered_wrench[:, 4], label=r"$\hat{x}_8$",  color="orange",         linewidth=2)
     plt.plot(t, estimated_wrench[:, 4], label=r"$z_{c,5}$",        color="seagreen",       linewidth=2)
     plt.title("Torque in Y-direction")

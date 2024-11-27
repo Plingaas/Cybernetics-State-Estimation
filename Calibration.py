@@ -157,4 +157,3 @@ COM_SKEW = np.array([
     [-COM_ESTIMATE[1], COM_ESTIMATE[0], 0]
 ])
 COM_MAG = np.sqrt(COM_ESTIMATE[0]**2 + COM_ESTIMATE[1]**2 + COM_ESTIMATE[2]**2)
-g = -9,81
