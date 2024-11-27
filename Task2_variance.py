@@ -14,6 +14,7 @@ R_fa = np.array([[0, -1, 0],
                  [-1, 0, 0]])
 
 
+
 accel_rotated = accel_data[["ax", "ay", "az"]].dot(R_fa.T)
 
 

@@ -43,17 +43,15 @@ class KalmanFilter:
 
         return self.x, self.P
     
-    def update_zf(self, x):
+    def update_zf(self, z):
         self.H = self.H_f
         self.R = self.R_f
-        z_f = self.H @ x
-        self.z = z_f
+        self.z = np.array(z).reshape(6,1)
 
-    def update_za(self, x):
+    def update_za(self, z):
         self.H = self.H_a
         self.R = self.R_a 
-        z_a = self.H @ x
-        self.z = z_a
+        self.z = np.array(z).reshape(3,1)
     
     def setQ(self, delta_t_k):
         sigmaK = 0.5

@@ -54,8 +54,6 @@ class Fusion:
         
         z_c = np.zeros((6, 9))
         u = np.zeros((3,1))
-        z = np.zeros((9, 1))
-
         g_fts_lastK = np.zeros((3, 1))
 
         last_tka = t0
@@ -66,18 +64,16 @@ class Fusion:
                 case 0: # Accelerometer
                     dt = (t - last_tka) * MICROSEC_TO_SEC
                     last_tka += dt * SEC_TO_MICROSEC
-                    z[:3, 0] = data * g
                     self.kf.setQ(dt)
-                    self.kf.update_za(z)
+                    self.kf.update_za(data * g) # Scale from g to m/s^2
                     self.kf.predict(u)
                     self.kf.correct()
                 
                 case 1: # FTS
                     dt = (t - last_tkf) * MICROSEC_TO_SEC
                     last_tkf += dt * SEC_TO_MICROSEC
-                    z[3:, 0] = data
                     self.kf.setQ(dt)
-                    self.kf.update_zf(z)
+                    self.kf.update_zf(data)
                     self.kf.predict(u)
                     self.kf.correct()
                 
