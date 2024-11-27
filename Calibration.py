@@ -137,16 +137,23 @@ m = estimate_mass(G, F)
 A = calc_A(G)
 T = calc_T(x_T, y_T, z_T)
 
-
 IMU_BIAS_X = ax.mean()
 IMU_BIAS_Y = ay.mean()
 IMU_BIAS_Z = az.mean()
+IMU_BIASES = [IMU_BIAS_X, IMU_BIAS_Y, IMU_BIAS_Z]
+
 FORCE_BIAS_X = fx.mean()
 FORCE_BIAS_Y = fy.mean()
 FORCE_BIAS_Z = fz.mean()
 TORQUE_BIAS_X = tx.mean()
 TORQUE_BIAS_Y = ty.mean()
 TORQUE_BIAS_Z = tz.mean()
-
+WRENCH_BIASES = [FORCE_BIAS_X, FORCE_BIAS_Y, FORCE_BIAS_Z, TORQUE_BIAS_X, TORQUE_BIAS_Y, TORQUE_BIAS_Z]
 MASS = m
 COM_ESTIMATE = estimate_COM(A, m, T)
+COM_SKEW = np.array([
+    [0, -COM_ESTIMATE[2], COM_ESTIMATE[1]],
+    [COM_ESTIMATE[2], 0, COM_ESTIMATE[0]],
+    [-COM_ESTIMATE[1], COM_ESTIMATE[0], 0]
+])
+COM_MAG = np.sqrt(COM_ESTIMATE[0]**2 + COM_ESTIMATE[1]**2 + COM_ESTIMATE[2]**2)

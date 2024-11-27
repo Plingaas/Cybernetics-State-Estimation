@@ -9,7 +9,9 @@ wrench_data = pd.read_csv("Data/0-steady-state_wrench.csv")
 accel_data[["ax", "ay", "az"]] = accel_data[["ax", "ay", "az"]] * 9.81
 
 
-R_fa = np.array([[0, -1, 0], [0, 0, 1], [-1, 0, 0]])
+R_fa = np.array([[0, -1, 0], 
+                 [0, 0, 1], 
+                 [-1, 0, 0]])
 
 
 accel_rotated = accel_data[["ax", "ay", "az"]].dot(R_fa.T)

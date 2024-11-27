@@ -1,26 +1,30 @@
 import numpy as np
-
+from Task2_variance import *
+from Calibration import *
 
 class KalmanFilter:
-    def __init__(self, A, B, H, Q, R, P, x):
-        """
-        Initialize the Kalman Filter with system parameters.
-
-        A: State transition matrix
-        B: Control input matrix
-        H: Observation model matrix
-        Q: Process noise covariance
-        R: Measurement noise covariance
-        P: Initial error covariance (posterior)
-        x: Initial state estimate (posterior)
-        """
+    def __init__(self, A, B):
         self.A = A
         self.B = B
-        self.H = H
-        self.Q = Q
-        self.R = R
-        self.P = P
-        self.x = x
+        self.H = None
+        self.Q = None
+        self.R = None
+        self.P = np.eye(9)
+        self.x = np.zeros((9,1))
+        self.P_prior = np.zeros((9,9))
+        self.x_prior = np.zeros((9,1))
+        self.x[7,0] = -0.4
+        self.z = None
+        self.H_f = np.block([
+            [np.zeros((3,3)), np.eye(3), np.zeros((3,3))],
+            [np.zeros((3,3)), np.zeros((3,3)), np.eye(3)]
+        ])
+        self.H_a = np.block([
+            [np.eye(3), np.zeros((3,3)), np.zeros((3,3))]
+        ])
+
+        self.R_f = np.diag([fx_variance, fy_variance, fz_variance, tx_variance, ty_variance, tz_variance])
+        self.R_a = np.diag([ax_variance, ay_variance, az_variance])
 
     def predict(self, u):
         self.x_prior = self.A @ self.x + self.B @ u
@@ -29,29 +33,28 @@ class KalmanFilter:
 
         return self.x_prior, self.P_prior
 
-    def correct(self, z):
-        """
-        z: Measurement vector
-        """
-
+    def correct(self): # update
         S = self.H @ self.P_prior @ self.H.T + self.R
         K = self.P_prior @ self.H.T @ np.linalg.inv(S)  # Kalman Gain
 
-        self.x = self.x_prior + K @ (z - self.H @ self.x_prior)
+        self.x = self.x_prior + K @ (self.z - self.H @ self.x_prior)
 
-        I = np.eye(self.P_prior.shape[0])  # Identity matrix
-        self.P = (I - K @ self.H) @ self.P_prior
+        self.P = (np.eye(9) - K @ self.H) @ self.P_prior
 
         return self.x, self.P
+    
+    def update_zf(self, x):
+        self.H = self.H_f
+        self.R = self.R_f
+        z_f = self.H @ x
+        self.z = z_f
 
-'''
-A = np.eye(9,9)
-B = np.zeros((9, 3))
-Q = np.eye(9, 9)
-H = np.eye(9)  # Measurement matrix (assuming direct measurement of wrench)
-R = np.eye(9) * 0.5  # Measurement noise covariance
-P0 = np.eye(9) * 100 # Initial error covariance
-x0 = np.zeros((9, 1))  # Initial state estimate (force and torque)
-
-filter = KalmanFilter(A, B, H, Q, R, P0, x0)
-'''
+    def update_za(self, x):
+        self.H = self.H_a
+        self.R = self.R_a 
+        z_a = self.H @ x
+        self.z = z_a
+    
+    def setQ(self, delta_t_k):
+        sigmaK = 0.5
+        self.Q = np.diag([1, 1, 1, MASS, MASS, MASS, MASS*COM_MAG, MASS*COM_MAG, MASS*COM_MAG]) * sigmaK * delta_t_k
