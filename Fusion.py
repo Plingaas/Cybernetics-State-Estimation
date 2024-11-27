@@ -38,7 +38,7 @@ class Fusion:
 
     def run(self):
         dataset = self.sortData()
-        
+
         t0 = dataset[0][0]
 
         raw_counter = 0
@@ -124,8 +124,8 @@ def runFusion(which):
     }
     
     accel_data['t'] -= 8416 # Phase shift 8416us
+    accel_data[['ax', 'ay', 'az']] -= IMU_BIASES # Unbias
     accel_data[['ax', 'ay', 'az']] = (R_fa @ accel_data[['ax', 'ay', 'az']].to_numpy().T).T # Rotate to fts frame
-    accel_data[['ax','ay','az']] -= IMU_BIASES # Unbias
 
     wrench_data[['fx','fy','fz','tx','ty','tz']] -= WRENCH_BIASES # Unbias
     
